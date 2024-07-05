@@ -1,0 +1,29 @@
+version: '3.7'
+
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: time-tracker
+      PGDATA: /data/postgres
+    restart: unless-stopped
+    ports:
+      - 5432:5432
+    # expose:
+    #   - "5432"
+
+  time-tracker:
+    image: time-tracker
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./config.yml:/app/config.yml
+      - ./.env:/app/.env # TODO: remove in the future
+    ports:
+      - 8000:8000
+    depends_on:
+      - postgres
+    restart: unless-stopped
