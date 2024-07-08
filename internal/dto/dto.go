@@ -19,3 +19,12 @@ type CreateUserRequest struct {
 type CreateUserResponse struct {
 	ID int `json:"id"`
 }
+
+type CreateTaskRequest struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+type CreateTaskResponse struct {
+	ID int `json:"id"`
+}

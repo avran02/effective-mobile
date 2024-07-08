@@ -14,10 +14,12 @@ import (
 
 type Repository interface {
 	GetUsers(limit, offset int, filterField string) ([]models.User, error)
-	GetUserTasks(userID int) []models.Task
 	CreateUser(user models.User) error
 	UpdateUserData(user models.User) error
 	DeleteUser(user models.User) error
+
+	CreateTask(task models.Task) error
+	GetUserTasks(userID int) []models.Task
 	StartUserTask(task models.Task) error
 	StopUserTask(task models.Task) error
 
@@ -33,11 +35,6 @@ func (r *repository) GetUsers(limit, offset int, filterField string) ([]models.U
 	return nil, nil
 }
 
-func (r *repository) GetUserTasks(userID int) []models.Task {
-	slog.Info("GetUserTasks repository")
-	return nil
-}
-
 func (r *repository) CreateUser(user models.User) error {
 	slog.Info("CreateUser repository")
 	return nil
@@ -50,6 +47,16 @@ func (r *repository) UpdateUserData(user models.User) error {
 
 func (r *repository) DeleteUser(user models.User) error {
 	slog.Info("DeleteUser repository")
+	return nil
+}
+
+func (r *repository) CreateTask(task models.Task) error {
+	slog.Info("CreateTask repository")
+	return nil
+}
+
+func (r *repository) GetUserTasks(userID int) []models.Task {
+	slog.Info("GetUserTasks repository")
 	return nil
 }
 

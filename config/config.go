@@ -1,9 +1,7 @@
 package config
 
 import (
-	"fmt"
 	"log"
-	"os"
 
 	"github.com/spf13/viper"
 )
@@ -35,10 +33,6 @@ func New() *Config {
 }
 
 func initConfig() {
-	dir, _ := os.Getwd()
-	fmt.Printf("\ncurrent dir: %+v\n", dir)
-	dirs, _ := os.ReadDir(".")
-	fmt.Printf("\nhere: %+v\n", dirs)
 	viper.SetConfigFile(".env")
 	viper.AutomaticEnv()
 

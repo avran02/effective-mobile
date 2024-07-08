@@ -29,7 +29,9 @@ func New(c controller.Controller) *Router {
 
 func getRoutes(c controller.Controller) *chi.Mux {
 	r := chi.NewRouter()
-	r.Route(viper.GetString("apiPathPrefix")+"/users", func(r chi.Router) {
+
+	r.Post("/tasks", c.CreateTask)
+	r.Route(viper.GetString("server.apiPathPrefix")+"/users", func(r chi.Router) {
 		r.Get("/", c.GetUsers)
 		r.Post("/", c.CreateUser)
 

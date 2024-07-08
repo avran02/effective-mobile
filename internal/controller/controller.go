@@ -20,6 +20,7 @@ type Controller interface {
 	UpdateUserData(w http.ResponseWriter, r *http.Request)
 	DeleteUser(w http.ResponseWriter, r *http.Request)
 
+	CreateTask(w http.ResponseWriter, r *http.Request)
 	GetUserTasks(w http.ResponseWriter, r *http.Request)
 	StartUserTask(w http.ResponseWriter, r *http.Request)
 	StopUserTask(w http.ResponseWriter, r *http.Request)
@@ -158,6 +159,31 @@ func (c *controller) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		slog.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+}
+
+func (c *controller) CreateTask(w http.ResponseWriter, r *http.Request) {
+	slog.Info("CreateTask controller")
+	var req dto.CreateTaskRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	taskID, err := c.service.CreateTask(req.Name, req.Description)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := dto.CreateTaskResponse{ID: taskID}
+
+	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 

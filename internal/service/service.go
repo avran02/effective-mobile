@@ -13,6 +13,7 @@ type Service interface {
 	UpdateUserData(user models.User) error
 	DeleteUser(userID int) error
 
+	CreateTask(name, description string) (int, error)
 	GetUserTasks(userID int, startDate, endDate string) []models.Task
 	StartUserTask(userID, taskId int) error
 	StopUserTask(userID, taskId int) error
@@ -25,11 +26,6 @@ type service struct {
 func (s *service) GetUsers(limit, offset int, filterField []string) ([]models.User, error) {
 	slog.Info("GetUsers service")
 	return s.repo.GetUsers(limit, offset, filterField[0])
-}
-
-func (s *service) GetUserTasks(userID int, startDate, endDate string) []models.Task {
-	slog.Info("GetUserTasks service")
-	return s.repo.GetUserTasks(userID)
 }
 
 func (s *service) CreateUser(passportNumber string) (int, error) {
@@ -48,6 +44,16 @@ func (s *service) UpdateUserData(user models.User) error {
 func (s *service) DeleteUser(userID int) error {
 	slog.Info("DeleteUser service")
 	return s.repo.DeleteUser(models.User{})
+}
+
+func (s *service) GetUserTasks(userID int, startDate, endDate string) []models.Task {
+	slog.Info("GetUserTasks service")
+	return s.repo.GetUserTasks(userID)
+}
+
+func (s *service) CreateTask(name, description string) (int, error) {
+	slog.Info("CreateTask service")
+	return 0, s.repo.CreateTask(models.Task{})
 }
 
 func (s *service) StartUserTask(userID, taskID int) error {

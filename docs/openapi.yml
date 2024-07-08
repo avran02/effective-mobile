@@ -6,6 +6,36 @@ servers:
   - url: http://localhost:8000/api/v1
     description: Local server
 paths:
+  /tasks:
+    post:
+      summary: Add new task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: 
+                  type: string
+                  example: "Buy milk"
+                description:
+                  type: string
+                  example: "Buy milk from the store on Pushkin Street"
+
+      responses:
+        '201':
+          description: Task added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 123
+        '400':
+          description: Invalid request
   /users:
     get:
       summary: Get users
