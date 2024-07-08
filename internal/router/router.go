@@ -6,43 +6,47 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/avran02/effective-mobile/config"
 	"github.com/avran02/effective-mobile/internal/controller"
 	"github.com/go-chi/chi/v5"
-	"github.com/spf13/viper"
 )
 
 type Router struct {
 	c *controller.Controller
 	*chi.Mux
+	config *config.Server
 }
 
-func New(c controller.Controller) *Router {
-	r := getRoutes(c)
+func New(c controller.Controller, conf *config.Server) *Router {
+	r := getRoutes(c, conf.APIPathPrefix)
 
 	printRoutes(r)
 
 	return &Router{
-		Mux: r,
-		c:   &c,
+		Mux:    r,
+		c:      &c,
+		config: conf,
 	}
 }
 
-func getRoutes(c controller.Controller) *chi.Mux {
+func getRoutes(c controller.Controller, apiPrefix string) *chi.Mux {
 	r := chi.NewRouter()
 
-	r.Post("/tasks", c.CreateTask)
-	r.Route(viper.GetString("server.apiPathPrefix")+"/users", func(r chi.Router) {
-		r.Get("/", c.GetUsers)
-		r.Post("/", c.CreateUser)
+	r.Route(apiPrefix, func(r chi.Router) {
+		r.Post("/tasks", c.CreateTask)
+		r.Route("/users", func(r chi.Router) {
+			r.Get("/", c.GetUsers)
+			r.Post("/", c.CreateUser)
 
-		r.Route("/{userId}", func(r chi.Router) {
-			r.Put("/", c.UpdateUserData)
-			r.Delete("/", c.DeleteUser)
+			r.Route("/{userId}", func(r chi.Router) {
+				r.Put("/", c.UpdateUserData)
+				r.Delete("/", c.DeleteUser)
 
-			r.Route("/tasks", func(r chi.Router) {
-				r.Get("/", c.GetUserTasks)
-				r.Post("/{taskId}/start", c.StartUserTask)
-				r.Post("/{taskId}/stop", c.StopUserTask)
+				r.Route("/tasks", func(r chi.Router) {
+					r.Get("/", c.GetUserTasks)
+					r.Post("/{taskId}/start", c.StartUserTask)
+					r.Post("/{taskId}/stop", c.StopUserTask)
+				})
 			})
 		})
 	})

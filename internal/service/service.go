@@ -1,8 +1,11 @@
 package service
 
 import (
+	"fmt"
 	"log/slog"
+	"strings"
 
+	"github.com/avran02/effective-mobile/config"
 	"github.com/avran02/effective-mobile/internal/models"
 	"github.com/avran02/effective-mobile/internal/repository"
 )
@@ -15,12 +18,13 @@ type Service interface {
 
 	CreateTask(name, description string) (int, error)
 	GetUserTasks(userID int, startDate, endDate string) []models.Task
-	StartUserTask(userID, taskId int) error
-	StopUserTask(userID, taskId int) error
+	StartUserTask(userID, taskID int) error
+	StopUserTask(userID, taskID int) error
 }
 
 type service struct {
-	repo repository.Repository
+	repo            repository.Repository
+	externalAPIConf config.ExternalAPI
 }
 
 func (s *service) GetUsers(limit, offset int, filterField []string) ([]models.User, error) {
@@ -30,10 +34,19 @@ func (s *service) GetUsers(limit, offset int, filterField []string) ([]models.Us
 
 func (s *service) CreateUser(passportNumber string) (int, error) {
 	slog.Info("CreateUser service")
-	user := models.User{
-		PassportNumber: passportNumber,
+	passportNumberParts := strings.Split(passportNumber, " ")
+	user, err := enrichUserData(s.externalAPIConf.EnrichUserDataEndpoint, passportNumberParts[0], passportNumberParts[1])
+	if err != nil {
+		slog.Error(err.Error())
+		return 0, err
 	}
-	return 0, s.repo.CreateUser(user)
+
+	user.PassportSerie = passportNumberParts[0]
+	user.PassportNumber = passportNumberParts[1]
+
+	slog.Info(fmt.Sprintf("%+v", user))
+
+	return s.repo.CreateUser(user)
 }
 
 func (s *service) UpdateUserData(user models.User) error {
@@ -66,8 +79,10 @@ func (s *service) StopUserTask(userID, taskID int) error {
 	return s.repo.StopUserTask(models.Task{})
 }
 
-func New(repo repository.Repository) Service {
+func New(repo repository.Repository, conf config.ExternalAPI) Service {
 	return &service{
 		repo: repo,
+
+		externalAPIConf: conf,
 	}
 }

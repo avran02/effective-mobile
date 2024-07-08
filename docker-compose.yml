@@ -27,3 +27,12 @@ services:
     depends_on:
       - postgres
     restart: unless-stopped
+
+  enrich-user-data:
+    image: enrich-user-data
+    build:
+      context: enrich_user_data_service_mock
+      dockerfile: Dockerfile
+    ports:
+      - 8888:8888
+    restart: unless-stopped

@@ -14,7 +14,7 @@ import (
 
 type Repository interface {
 	GetUsers(limit, offset int, filterField string) ([]models.User, error)
-	CreateUser(user models.User) error
+	CreateUser(user *models.User) (int, error)
 	UpdateUserData(user models.User) error
 	DeleteUser(user models.User) error
 
@@ -35,9 +35,9 @@ func (r *repository) GetUsers(limit, offset int, filterField string) ([]models.U
 	return nil, nil
 }
 
-func (r *repository) CreateUser(user models.User) error {
+func (r *repository) CreateUser(user *models.User) (int, error) {
 	slog.Info("CreateUser repository")
-	return nil
+	return 0, nil
 }
 
 func (r *repository) UpdateUserData(user models.User) error {

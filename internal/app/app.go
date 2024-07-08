@@ -10,29 +10,29 @@ import (
 	"github.com/avran02/effective-mobile/internal/repository"
 	"github.com/avran02/effective-mobile/internal/router"
 	"github.com/avran02/effective-mobile/internal/service"
-
-	"github.com/spf13/viper"
 )
 
 type App struct {
 	router.Router
 	repository.Repository
+	config *config.Config
 }
 
 func New() *App {
 	conf := config.New()
 	repo := repository.New(conf.DB)
-	service := service.New(repo)
+	service := service.New(repo, conf.ExternalAPI)
 	controller := controller.New(service)
-	router := router.New(controller)
+	router := router.New(controller, &conf.Server)
 
 	return &App{
 		Router: *router,
+		config: conf,
 	}
 }
 
 func (a *App) Run() error {
-	serverEndpoint := fmt.Sprintf("%s:%d", viper.GetString("server.host"), viper.GetInt("server.port"))
+	serverEndpoint := fmt.Sprintf("%s:%d", a.config.DB.Host, a.config.Server.Port)
 	slog.Info("Starting server at " + serverEndpoint)
 	s := http.Server{ //nolint:gosec
 		Addr:    serverEndpoint,
