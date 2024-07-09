@@ -1,5 +1,5 @@
 CREATE TABLE tasks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
     user_id INTEGER,

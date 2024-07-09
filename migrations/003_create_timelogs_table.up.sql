@@ -1,7 +1,7 @@
 CREATE TABLE time_logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     task_id INTEGER,
-    start_time DATETIME NOT NULL,
-    end_time DATETIME,
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ,
     FOREIGN KEY (task_id) REFERENCES tasks(id)
 );

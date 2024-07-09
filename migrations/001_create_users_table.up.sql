@@ -1,5 +1,5 @@
 CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     passport_number TEXT NOT NULL UNIQUE,
     passport_serie TEXT NOT NULL UNIQUE,
     name TEXT,
