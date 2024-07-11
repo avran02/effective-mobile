@@ -40,7 +40,7 @@ func infoHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/info", infoHandler)
 	fmt.Println("Starting server at :8888")
-	if err := http.ListenAndServe(":8888", nil); err != nil { //nolint: gosec
+	if err := http.ListenAndServe(":8888", nil); err != nil {
 		fmt.Printf("Error starting server: %v\n", err)
 	}
 }

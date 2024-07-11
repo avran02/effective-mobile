@@ -16,6 +16,7 @@ type Server struct {
 	APIPathPrefix string
 	Host          string
 	Port          int
+	LogLevel      string
 }
 
 type ExternalAPI struct {
@@ -45,6 +46,7 @@ func New() *Config {
 			APIPathPrefix: viper.GetString("server.apiPathPrefix"),
 			Host:          viper.GetString("server.host"),
 			Port:          viper.GetInt("server.port"),
+			LogLevel:      viper.GetString("server.logLevel"),
 		},
 		ExternalAPI: ExternalAPI{
 			EnrichUserDataEndpoint: viper.GetString("externalApi.enrichUserData.endpoint"),

@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/avran02/effective-mobile/internal/dto"
 	"github.com/avran02/effective-mobile/internal/mapper"
+	"github.com/avran02/effective-mobile/internal/repository"
 	"github.com/avran02/effective-mobile/internal/service"
 	"github.com/go-chi/chi/v5"
 	jsoniter "github.com/json-iterator/go"
@@ -32,7 +34,6 @@ type controller struct {
 }
 
 func (c *controller) GetUsers(w http.ResponseWriter, r *http.Request) {
-	slog.Info("GetUsers controller")
 	queryParams := r.URL.Query()
 	pageString := queryParams.Get("page")
 	pageSizeString := queryParams.Get("pageSize")
@@ -129,6 +130,11 @@ func (c *controller) UpdateUserData(w http.ResponseWriter, r *http.Request) {
 	userModel.ID = userID
 
 	if err := c.service.UpdateUserData(userModel); err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
 		slog.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -174,7 +180,7 @@ func (c *controller) CreateTask(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateTaskRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		slog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -258,6 +264,11 @@ func (c *controller) StopUserTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := c.service.StopUserTask(taskID); err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
 		slog.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

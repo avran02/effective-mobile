@@ -8,6 +8,7 @@ import (
 
 	"github.com/avran02/effective-mobile/config"
 	"github.com/avran02/effective-mobile/internal/controller"
+	"github.com/avran02/effective-mobile/internal/middleware"
 	"github.com/go-chi/chi/v5"
 	swagger "github.com/swaggo/http-swagger"
 )
@@ -20,7 +21,6 @@ type Router struct {
 
 func New(c controller.Controller, conf *config.Server) *Router {
 	r := getRoutes(c, conf.APIPathPrefix)
-
 	printRoutes(r)
 
 	return &Router{
@@ -32,6 +32,7 @@ func New(c controller.Controller, conf *config.Server) *Router {
 
 func getRoutes(c controller.Controller, apiPrefix string) *chi.Mux {
 	r := chi.NewRouter()
+	r.Use(middleware.LoggingMiddleware)
 
 	r.Get("/docs/openapi.yml", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./docs/openapi.yml")

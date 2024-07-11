@@ -2,6 +2,8 @@ server:
   apiPathPrefix: /api/v1
   host: 0.0.0.0
   port: 8000
+  logLevel: debug
+  # logLevel: info
 
 externalApi:
   enrichUserData:

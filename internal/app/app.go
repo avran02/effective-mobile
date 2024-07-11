@@ -10,6 +10,7 @@ import (
 	"github.com/avran02/effective-mobile/internal/repository"
 	"github.com/avran02/effective-mobile/internal/router"
 	"github.com/avran02/effective-mobile/internal/service"
+	"github.com/avran02/effective-mobile/logger"
 )
 
 type App struct {
@@ -20,6 +21,7 @@ type App struct {
 
 func New() *App {
 	conf := config.New()
+	logger.Setup(conf.Server)
 	slog.Info(fmt.Sprintf("Config: %+v", conf))
 	repo := repository.New(conf.DB)
 	service := service.New(repo, conf.ExternalAPI)
@@ -35,7 +37,7 @@ func New() *App {
 func (a *App) Run() error {
 	serverEndpoint := fmt.Sprintf("%s:%d", a.config.Server.Host, a.config.Server.Port)
 	slog.Info("Starting server at " + serverEndpoint)
-	s := http.Server{ //nolint:gosec
+	s := http.Server{
 		Addr:    serverEndpoint,
 		Handler: a.Router,
 	}

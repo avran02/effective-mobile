@@ -34,7 +34,7 @@ type repository struct {
 }
 
 func (r *repository) GetUsers(page, pageSize int, filters map[string]string) ([]models.User, error) {
-	slog.Info("GetUsers repository")
+	slog.Info("Starting GetUsers", "page", page, "pageSize", pageSize, "filters", filters)
 
 	builder := strings.Builder{}
 	builder.WriteString("SELECT * FROM users")
@@ -59,17 +59,17 @@ func (r *repository) GetUsers(page, pageSize int, filters map[string]string) ([]
 	builder.WriteString(fmt.Sprint(len(params) + 2)) //nolint:mnd
 
 	query := builder.String()
-	slog.Info(query)
 
 	limit := pageSize
 	offset := (page - 1) * limit
-
 	params = append(params, limit, offset)
 
-	slog.Info(fmt.Sprintf("limit: %d, offset: %d", limit, offset))
+	slog.Debug(fmt.Sprintf("Query: %s\nParams: %+v", query, params))
 
 	rows, err := r.db.Query(query, params...)
 	if err != nil {
+		err = fmt.Errorf("can't get users: %w", err)
+		slog.Error(err.Error())
 		return nil, err
 	}
 	defer rows.Close()
@@ -78,15 +78,20 @@ func (r *repository) GetUsers(page, pageSize int, filters map[string]string) ([]
 	for rows.Next() {
 		var user models.User
 		if err := rows.Scan(&user.ID, &user.PassportNumber, &user.Name, &user.Surname, &user.Patronymic, &user.Address); err != nil {
+			err = fmt.Errorf("can't scan user: %w", err)
+			slog.Error(err.Error())
 			return nil, err
 		}
 		users = append(users, user)
 	}
+
+	slog.Info(fmt.Sprintf("Successfully got %d users", len(users)))
+
 	return users, nil
 }
 
 func (r *repository) CreateUser(user *models.User) (int, error) {
-	slog.Info("CreateUser repository")
+	slog.Info("Starting CreateUser for user with", "id", user.ID)
 
 	var id int
 	query := `
@@ -99,6 +104,8 @@ func (r *repository) CreateUser(user *models.User) (int, error) {
 	`
 
 	if err := r.db.QueryRow(query, user.PassportNumber, user.Name, user.Surname, user.Patronymic, user.Address).Scan(&id); err != nil {
+		err = fmt.Errorf("can't create user: %w", err)
+		slog.Error(err.Error())
 		return 0, err
 	}
 
@@ -106,7 +113,7 @@ func (r *repository) CreateUser(user *models.User) (int, error) {
 }
 
 func (r *repository) UpdateUserData(user models.User) error {
-	slog.Info("UpdateUserData repository")
+	slog.Info("Starting UpdateUserData repository for user with", "id", user.ID)
 
 	builder := strings.Builder{}
 	builder.WriteString("UPDATE users SET ")
@@ -132,28 +139,48 @@ func (r *repository) UpdateUserData(user models.User) error {
 
 	query := builder.String()
 
-	slog.Info(fmt.Sprintf("Update query: %s", query))
-	slog.Info(fmt.Sprintf("Update params: %+v", params))
+	slog.Debug(fmt.Sprintf("Query: %s\nParams: %+v", query, params))
 
-	_, err := r.db.Exec(query, params...)
+	res, err := r.db.Exec(query, params...)
 	if err != nil {
+		err = fmt.Errorf("can't update user: %w", err)
+		slog.Error(err.Error())
 		return err
 	}
+
+	affectedRows, err := res.RowsAffected()
+	if err != nil {
+		err = fmt.Errorf("can't get affected rows: %w", err)
+		slog.Error(err.Error())
+		return err
+	}
+
+	if affectedRows == 0 {
+		slog.Info("No rows were updated")
+		return ErrNotFound
+	}
+
+	slog.Info(fmt.Sprintf("Successfully updated %d rows", affectedRows))
 
 	return nil
 }
 
 func (r *repository) DeleteUser(id int) error {
-	slog.Info("DeleteUser repository")
+	slog.Info("Starting DeleteUser repository for user with", "id", id)
 
 	query := "DELETE FROM users WHERE id = $1"
 
 	_, err := r.db.Exec(query, id)
-	return err
+	if err != nil {
+		err = fmt.Errorf("can't delete user: %w", err)
+		slog.Error(err.Error())
+		return err
+	}
+	return nil
 }
 
 func (r *repository) CreateTask(task models.Task) (int, error) {
-	slog.Info("CreateTask repository")
+	slog.Info("Starting CreateTask repository for task with", "id", task.ID, "name", task.Name)
 	var id int
 
 	query := `
@@ -166,15 +193,17 @@ func (r *repository) CreateTask(task models.Task) (int, error) {
 
 	err := r.db.QueryRow(query, task.Name, task.Description, task.UserID).Scan(&id)
 	if err != nil {
+		err = fmt.Errorf("can't create task: %w", err)
 		slog.Error(err.Error())
 		return 0, err
 	}
-	return id, err
+
+	return id, nil
 }
 
 func (r *repository) GetUserTasks(userID int, startDate, endDate time.Time) ([]models.TaskTimeSpent, error) {
-	slog.Info("GetUserTasks repository")
-	// TODO: fix it
+	slog.Info("Starting GetUserTasks repository", "user_id", userID, "start_date", startDate, "end_date", endDate)
+
 	query := `
 	SELECT 
 	    tasks.id,
@@ -195,6 +224,8 @@ func (r *repository) GetUserTasks(userID int, startDate, endDate time.Time) ([]m
 
 	rows, err := r.db.Query(query, userID, startDate, endDate)
 	if err != nil {
+		err = fmt.Errorf("can't get user tasks: %w", err)
+		slog.Error(err.Error())
 		return nil, err
 	}
 	defer rows.Close()
@@ -203,28 +234,59 @@ func (r *repository) GetUserTasks(userID int, startDate, endDate time.Time) ([]m
 	for rows.Next() {
 		var taskTimeSpent models.TaskTimeSpent
 		if err := rows.Scan(&taskTimeSpent.TaskID, &taskTimeSpent.Name, &taskTimeSpent.Description, &taskTimeSpent.TimeSpentSeconds); err != nil {
+			err = fmt.Errorf("can't scan row: %w", err)
+			slog.Error(err.Error())
 			return nil, err
 		}
 		taskTimeSpents = append(taskTimeSpents, taskTimeSpent)
 	}
 
+	slog.Debug(fmt.Sprintf("Found %d tasks", len(taskTimeSpents)))
+
 	return taskTimeSpents, nil
 }
 
 func (r *repository) StartUserTask(taskID int) error {
-	slog.Info("StartUserTask repository")
+	slog.Info("Started StartUserTask repository", "task_id", taskID)
 
 	query := "INSERT INTO time_logs (task_id, start_time) VALUES ($1, $2)"
 
 	_, err := r.db.Exec(query, taskID, time.Now())
-	return err
+	if err != nil {
+		err = fmt.Errorf("can't start task: %w", err)
+		slog.Error(err.Error())
+		return err
+	}
+
+	return nil
 }
 
 func (r *repository) StopUserTask(taskID int) error {
-	slog.Info("StopUserTask repository")
+	slog.Info("Started StopUserTask repository", "task_id", taskID)
 
 	query := "UPDATE time_logs SET end_time = $1 WHERE task_id = $2 AND end_time IS NULL"
-	_, err := r.db.Exec(query, time.Now(), taskID)
+	res, err := r.db.Exec(query, time.Now(), taskID)
+	if err != nil {
+		err = fmt.Errorf("can't stop task: %w", err)
+		slog.Error(err.Error())
+		return err
+	}
+
+	n, err := res.RowsAffected()
+	if err != nil {
+		err = fmt.Errorf("can't get rows affected: %w", err)
+		slog.Error(err.Error())
+		return err
+	}
+
+	slog.Debug(fmt.Sprintf("Rows affected: %d", n))
+
+	if n == 0 {
+		err = fmt.Errorf("can't stop task: %w", ErrNotFound)
+		slog.Error(err.Error())
+		return err
+	}
+
 	return err
 }
 
@@ -234,7 +296,6 @@ func (r *repository) Close() error {
 }
 
 func New(conf config.DB) Repository {
-	slog.Info(getDsn(conf))
 	db, err := sql.Open("postgres", getDsn(conf))
 	if err != nil {
 		log.Fatal("can't open db conn:", err)

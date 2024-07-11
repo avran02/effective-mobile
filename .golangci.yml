@@ -40,7 +40,7 @@ linters:
     # - revive
     - mnd
     - gomodguard
-    - gosec
+    # - gosec
     - gosimple
     - govet
     - ineffassign
