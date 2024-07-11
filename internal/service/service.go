@@ -3,7 +3,9 @@ package service
 import (
 	"fmt"
 	"log/slog"
+	"sort"
 	"strings"
+	"time"
 
 	"github.com/avran02/effective-mobile/config"
 	"github.com/avran02/effective-mobile/internal/models"
@@ -11,15 +13,15 @@ import (
 )
 
 type Service interface {
-	GetUsers(limit, offset int, filterField []string) ([]models.User, error)
+	GetUsers(limit, offset int, filters map[string]string) ([]models.User, error)
 	CreateUser(passportNumber string) (int, error)
 	UpdateUserData(user models.User) error
 	DeleteUser(userID int) error
 
-	CreateTask(name, description string) (int, error)
-	GetUserTasks(userID int, startDate, endDate string) []models.Task
-	StartUserTask(userID, taskID int) error
-	StopUserTask(userID, taskID int) error
+	CreateTask(task models.Task) (int, error)
+	GetUserTasks(userID int, startDate, endDate string) ([]models.TaskTimeSpent, error)
+	StartUserTask(taskID int) error
+	StopUserTask(taskID int) error
 }
 
 type service struct {
@@ -27,9 +29,9 @@ type service struct {
 	externalAPIConf config.ExternalAPI
 }
 
-func (s *service) GetUsers(limit, offset int, filterField []string) ([]models.User, error) {
+func (s *service) GetUsers(page, pageSize int, filters map[string]string) ([]models.User, error) {
 	slog.Info("GetUsers service")
-	return s.repo.GetUsers(limit, offset, filterField[0])
+	return s.repo.GetUsers(page, pageSize, filters)
 }
 
 func (s *service) CreateUser(passportNumber string) (int, error) {
@@ -41,8 +43,7 @@ func (s *service) CreateUser(passportNumber string) (int, error) {
 		return 0, err
 	}
 
-	user.PassportSerie = passportNumberParts[0]
-	user.PassportNumber = passportNumberParts[1]
+	user.PassportNumber = passportNumber
 
 	slog.Info(fmt.Sprintf("%+v", user))
 
@@ -56,27 +57,50 @@ func (s *service) UpdateUserData(user models.User) error {
 
 func (s *service) DeleteUser(userID int) error {
 	slog.Info("DeleteUser service")
-	return s.repo.DeleteUser(models.User{})
+	return s.repo.DeleteUser(userID)
 }
 
-func (s *service) GetUserTasks(userID int, startDate, endDate string) []models.Task {
+func (s *service) GetUserTasks(userID int, startDate, endDate string) ([]models.TaskTimeSpent, error) {
 	slog.Info("GetUserTasks service")
-	return s.repo.GetUserTasks(userID)
+
+	startTime, err := time.Parse("2006-01-02", startDate)
+	if err != nil {
+		slog.Error(err.Error())
+		return nil, nil
+	}
+
+	endTime, err := time.Parse("2006-01-02", endDate)
+	if err != nil {
+		slog.Error(err.Error())
+		return nil, nil
+	}
+
+	tasksTimeSpent, err := s.repo.GetUserTasks(userID, startTime, endTime)
+	if err != nil {
+		slog.Error(err.Error())
+		return nil, nil
+	}
+
+	sort.Slice(tasksTimeSpent, func(i, j int) bool {
+		return tasksTimeSpent[i].TimeSpentSeconds > tasksTimeSpent[j].TimeSpentSeconds
+	})
+
+	return tasksTimeSpent, nil
 }
 
-func (s *service) CreateTask(name, description string) (int, error) {
+func (s *service) CreateTask(task models.Task) (int, error) {
 	slog.Info("CreateTask service")
-	return 0, s.repo.CreateTask(models.Task{})
+	return s.repo.CreateTask(task)
 }
 
-func (s *service) StartUserTask(userID, taskID int) error {
+func (s *service) StartUserTask(taskID int) error {
 	slog.Info("StartUserTask service")
-	return s.repo.StartUserTask(models.Task{})
+	return s.repo.StartUserTask(taskID)
 }
 
-func (s *service) StopUserTask(userID, taskID int) error {
+func (s *service) StopUserTask(taskID int) error {
 	slog.Info("StopUserTask service")
-	return s.repo.StopUserTask(models.Task{})
+	return s.repo.StopUserTask(taskID)
 }
 
 func New(repo repository.Repository, conf config.ExternalAPI) Service {

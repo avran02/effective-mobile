@@ -7,10 +7,10 @@ import (
 )
 
 func FromUserModelToUserDTO(model models.User) dto.UserDTO {
-	fullPassport := model.PassportSerie + model.PassportNumber
-	hiddenPassport := utils.HidePassportNumber(fullPassport)
+	hiddenPassport := utils.HidePassportNumber(model.PassportNumber)
 
 	return dto.UserDTO{
+		ID:             model.ID,
 		PassportNumber: hiddenPassport,
 		Name:           model.Name,
 		Surname:        model.Surname,
@@ -21,8 +21,8 @@ func FromUserModelToUserDTO(model models.User) dto.UserDTO {
 
 func FromUserDTOToUserModel(dto dto.UserDTO) models.User {
 	return models.User{
-		PassportSerie:  dto.PassportNumber[:4],
-		PassportNumber: dto.PassportNumber[4:],
+		ID:             dto.ID,
+		PassportNumber: dto.PassportNumber,
 		Name:           dto.Name,
 		Surname:        dto.Surname,
 		Patronymic:     dto.Patronymic,

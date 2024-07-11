@@ -9,6 +9,6 @@ import (
 func main() {
 	a := app.New()
 	if err := a.Run(); err != nil {
-		log.Fatal(err)
+		log.Fatal("can't run app", err)
 	}
 }

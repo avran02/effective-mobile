@@ -9,6 +9,7 @@ import (
 	"github.com/avran02/effective-mobile/config"
 	"github.com/avran02/effective-mobile/internal/controller"
 	"github.com/go-chi/chi/v5"
+	swagger "github.com/swaggo/http-swagger"
 )
 
 type Router struct {
@@ -32,21 +33,32 @@ func New(c controller.Controller, conf *config.Server) *Router {
 func getRoutes(c controller.Controller, apiPrefix string) *chi.Mux {
 	r := chi.NewRouter()
 
+	r.Get("/docs/openapi.yml", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./docs/openapi.yml")
+	})
+	r.Get("/swagger/*", swagger.Handler(
+		swagger.URL("/docs/openapi.yml"),
+	))
+	r.Get("/docs", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/swagger/index.html", http.StatusFound)
+	})
+
 	r.Route(apiPrefix, func(r chi.Router) {
 		r.Post("/tasks", c.CreateTask)
+
 		r.Route("/users", func(r chi.Router) {
 			r.Get("/", c.GetUsers)
 			r.Post("/", c.CreateUser)
 
+			r.Route("/tasks/{taskId}", func(r chi.Router) {
+				r.Post("/start", c.StartUserTask)
+				r.Post("/stop", c.StopUserTask)
+			})
+
 			r.Route("/{userId}", func(r chi.Router) {
+				r.Get("/tasks", c.GetUserTasks)
 				r.Put("/", c.UpdateUserData)
 				r.Delete("/", c.DeleteUser)
-
-				r.Route("/tasks", func(r chi.Router) {
-					r.Get("/", c.GetUserTasks)
-					r.Post("/{taskId}/start", c.StartUserTask)
-					r.Post("/{taskId}/stop", c.StopUserTask)
-				})
 			})
 		})
 	})

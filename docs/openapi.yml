@@ -16,13 +16,15 @@ paths:
             schema:
               type: object
               properties:
+                userId:
+                  type: integer
+                  example: 4
                 name: 
                   type: string
                   example: "Buy milk"
                 description:
                   type: string
                   example: "Buy milk from the store on Pushkin Street"
-
       responses:
         '201':
           description: Task added successfully
@@ -130,14 +132,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/UpdateUserRequest'
       responses:
         '200':
           description: User updated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                type: string
+                example: "ok"
         '404':
           description: User not found
     delete:
@@ -189,15 +192,10 @@ paths:
         '400':
           description: Invalid request
 
-  /users/{userId}/tasks/{taskId}/start:
+  /users/tasks/{taskId}/start:
     post:
       summary: Start task timer for user
       parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
         - name: taskId
           in: path
           required: true
@@ -209,15 +207,10 @@ paths:
         '404':
           description: User or task not found
 
-  /users/{userId}/tasks/{taskId}/stop:
+  /users/tasks/{taskId}/stop:
     post:
       summary: Stop task timer for user
       parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
         - name: taskId
           in: path
           required: true
@@ -235,7 +228,21 @@ components:
       type: object
       properties:
         id:
+          type: integer
+        passportNumber:
           type: string
+        surname:
+          type: string
+        name:
+          type: string
+        patronymic:
+          type: string
+        address:
+          type: string
+
+    UpdateUserRequest:
+      type: object
+      properties:
         passportNumber:
           type: string
         surname:
@@ -256,4 +263,4 @@ components:
           type: string
         timeSpent:
           type: string
-          example: "3h 45m"
+          example: "95.1234123"

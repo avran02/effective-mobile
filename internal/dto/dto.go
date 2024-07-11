@@ -1,6 +1,7 @@
 package dto
 
 type UserDTO struct {
+	ID             int    `json:"id"`
 	PassportNumber string `json:"passportNumber"`
 	Name           string `json:"name"`
 	Surname        string `json:"surname"`
@@ -21,6 +22,7 @@ type CreateUserResponse struct {
 }
 
 type CreateTaskRequest struct {
+	UserID      int    `json:"userId"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }

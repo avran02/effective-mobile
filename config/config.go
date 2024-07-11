@@ -53,7 +53,7 @@ func New() *Config {
 }
 
 func initConfig() {
-	viper.SetConfigFile(".env")
+	// viper.SetConfigFile(".env")
 	viper.AutomaticEnv()
 
 	viper.SetConfigName("config")

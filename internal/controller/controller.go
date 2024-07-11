@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -35,13 +36,14 @@ func (c *controller) GetUsers(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	pageString := queryParams.Get("page")
 	pageSizeString := queryParams.Get("pageSize")
+
 	passportNumber := queryParams.Get("passportNumber")
 	surname := queryParams.Get("surname")
 	name := queryParams.Get("name")
 	patronymic := queryParams.Get("patronymic")
 	address := queryParams.Get("address")
 
-	filters := []string{passportNumber, surname, name, patronymic, address}
+	filters := mapper.ToDatabaseFilters(passportNumber, surname, name, patronymic, address)
 
 	page, err := strconv.Atoi(pageString)
 	if err != nil {
@@ -64,7 +66,10 @@ func (c *controller) GetUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	users := make([]dto.UserDTO, 0, len(userModels))
+	slog.Info(fmt.Sprintf("%+v", userModels))
+	slog.Info(fmt.Sprint(len(userModels)))
+
+	users := make([]dto.UserDTO, len(userModels))
 	for i, model := range userModels {
 		user := mapper.FromUserModelToUserDTO(model)
 		users[i] = user
@@ -111,12 +116,14 @@ func (c *controller) UpdateUserData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	slog.Info("userID: " + userIDString)
 	var req dto.UserDTO
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		slog.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	slog.Info("after decoding")
 
 	userModel := mapper.FromUserDTOToUserModel(req)
 	userModel.ID = userID
@@ -171,7 +178,7 @@ func (c *controller) CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	taskID, err := c.service.CreateTask(req.Name, req.Description)
+	taskID, err := c.service.CreateTask(mapper.FromTaskDTOToModel(req))
 	if err != nil {
 		slog.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -202,7 +209,12 @@ func (c *controller) GetUserTasks(w http.ResponseWriter, r *http.Request) {
 	startDate := queryParams.Get("startDate")
 	endDate := queryParams.Get("endDate")
 
-	tasks := c.service.GetUserTasks(userID, startDate, endDate)
+	tasks, err := c.service.GetUserTasks(userID, startDate, endDate)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	if err := json.NewEncoder(w).Encode(tasks); err != nil {
 		slog.Error(err.Error())
@@ -212,14 +224,15 @@ func (c *controller) GetUserTasks(w http.ResponseWriter, r *http.Request) {
 
 func (c *controller) StartUserTask(w http.ResponseWriter, r *http.Request) {
 	slog.Info("StartUserTask controller")
-	userID, taskID, err := parseUserIDAndTaskID(r)
+	taskIDString := chi.URLParam(r, "taskId")
+	taskID, err := strconv.Atoi(taskIDString)
 	if err != nil {
 		slog.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if err := c.service.StartUserTask(userID, taskID); err != nil {
+	if err := c.service.StartUserTask(taskID); err != nil {
 		slog.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -236,14 +249,15 @@ func (c *controller) StartUserTask(w http.ResponseWriter, r *http.Request) {
 
 func (c *controller) StopUserTask(w http.ResponseWriter, r *http.Request) {
 	slog.Info("StopUserTask controller")
-	userID, taskID, err := parseUserIDAndTaskID(r)
+	taskIDString := chi.URLParam(r, "taskId")
+	taskID, err := strconv.Atoi(taskIDString)
 	if err != nil {
 		slog.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if err := c.service.StopUserTask(userID, taskID); err != nil {
+	if err := c.service.StopUserTask(taskID); err != nil {
 		slog.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

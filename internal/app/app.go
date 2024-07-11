@@ -20,6 +20,7 @@ type App struct {
 
 func New() *App {
 	conf := config.New()
+	slog.Info(fmt.Sprintf("Config: %+v", conf))
 	repo := repository.New(conf.DB)
 	service := service.New(repo, conf.ExternalAPI)
 	controller := controller.New(service)
@@ -32,7 +33,7 @@ func New() *App {
 }
 
 func (a *App) Run() error {
-	serverEndpoint := fmt.Sprintf("%s:%d", a.config.DB.Host, a.config.Server.Port)
+	serverEndpoint := fmt.Sprintf("%s:%d", a.config.Server.Host, a.config.Server.Port)
 	slog.Info("Starting server at " + serverEndpoint)
 	s := http.Server{ //nolint:gosec
 		Addr:    serverEndpoint,
@@ -41,7 +42,7 @@ func (a *App) Run() error {
 
 	s.RegisterOnShutdown(func() {
 		if err := a.Repository.Close(); err != nil {
-			slog.Error(err.Error())
+			slog.Error("can't close db conn: " + err.Error())
 		}
 	})
 
