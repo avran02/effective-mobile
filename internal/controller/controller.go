@@ -11,6 +11,7 @@ import (
 	"github.com/avran02/effective-mobile/internal/mapper"
 	"github.com/avran02/effective-mobile/internal/repository"
 	"github.com/avran02/effective-mobile/internal/service"
+	"github.com/avran02/effective-mobile/internal/validation"
 	"github.com/go-chi/chi/v5"
 	jsoniter "github.com/json-iterator/go"
 )
@@ -39,6 +40,12 @@ func (c *controller) GetUsers(w http.ResponseWriter, r *http.Request) {
 	pageSizeString := queryParams.Get("pageSize")
 
 	passportNumber := queryParams.Get("passportNumber")
+	if err := validation.PassportNumber(passportNumber); err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	surname := queryParams.Get("surname")
 	name := queryParams.Get("name")
 	patronymic := queryParams.Get("patronymic")
@@ -91,6 +98,12 @@ func (c *controller) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := validation.PassportNumber(req.PassportNumber); err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	userID, err := c.service.CreateUser(req.PassportNumber)
 	if err != nil {
 		slog.Error(err.Error())
@@ -128,6 +141,14 @@ func (c *controller) UpdateUserData(w http.ResponseWriter, r *http.Request) {
 
 	userModel := mapper.FromUserDTOToUserModel(req)
 	userModel.ID = userID
+
+	if userModel.PassportNumber != "" {
+		if err := validation.PassportNumber(userModel.PassportNumber); err != nil {
+			slog.Error(err.Error())
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
 
 	if err := c.service.UpdateUserData(userModel); err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
